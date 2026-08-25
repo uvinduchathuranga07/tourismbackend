@@ -4,12 +4,20 @@ import pandas as pd
 import joblib
 import requests
 
-from weather_recommendation_engine import calculate_weather_suitability
-from travel_transport_engine import build_travel_transport_summary
-from crowd_safety_engine import build_crowd_safety_summary
-from event_activity_engine import build_activity_recommendations
-from event_timing_engine import build_event_timing_summary
-from final_recommendation_engine import build_final_recommendation, calculate_overall_score
+try:
+    from .weather_recommendation_engine import calculate_weather_suitability
+    from .travel_transport_engine import build_travel_transport_summary
+    from .crowd_safety_engine import build_crowd_safety_summary
+    from .event_activity_engine import build_activity_recommendations
+    from .event_timing_engine import build_event_timing_summary
+    from .final_recommendation_engine import build_final_recommendation, calculate_overall_score
+except ImportError:  # running as a script
+    from weather_recommendation_engine import calculate_weather_suitability
+    from travel_transport_engine import build_travel_transport_summary
+    from crowd_safety_engine import build_crowd_safety_summary
+    from event_activity_engine import build_activity_recommendations
+    from event_timing_engine import build_event_timing_summary
+    from final_recommendation_engine import build_final_recommendation, calculate_overall_score
 
 bp = Blueprint("assistance", __name__)
 
