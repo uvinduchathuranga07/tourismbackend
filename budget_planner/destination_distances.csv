@@ -1,0 +1,43 @@
+from,to,distance_km
+Colombo,Kandy,115
+Kandy,Nuwara Eliya,76
+Nuwara Eliya,Ella,55
+Ella,Colombo,210
+Colombo,Bentota,62
+Bentota,Galle,56
+Bentota,Hikkaduwa,34
+Hikkaduwa,Galle,20
+Galle,Mirissa,35
+Mirissa,Unawatuna,29
+Unawatuna,Galle,6
+Mirissa,Colombo,155
+Galle,Colombo,120
+Colombo,Trincomalee,265
+Trincomalee,Arugam Bay,225
+Arugam Bay,Colombo,320
+Colombo,Sigiriya,175
+Sigiriya,Polonnaruwa,58
+Polonnaruwa,Kandy,140
+Sigiriya,Kandy,90
+Polonnaruwa,Colombo,225
+Colombo,Yala,260
+Yala,Udawalawe,95
+Yala,Ella,105
+Udawalawe,Colombo,165
+Colombo,Kitulgala,85
+Kitulgala,Ella,140
+Kandy,Ella,135
+Kandy,Galle,220
+Colombo,Badulla,230
+Badulla,Ella,25
+Ella,Arugam Bay,135
+Ella,Galle,200
+Colombo,Anuradhapura,205
+Anuradhapura,Jaffna,195
+Jaffna,Trincomalee,235
+Trincomalee,Ella,290
+Anuradhapura,Trincomalee,110
+Sigiriya,Ella,180
+Yala,Galle,170
+Badulla,Arugam Bay,135
+Nuwara Eliya,Mirissa,210

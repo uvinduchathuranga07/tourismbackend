@@ -1,0 +1,35 @@
+destination,attraction_name,category,adult_price_lkr,child_price_lkr,activity_price_lkr,is_free,effective_date,data_source
+Kandy,Temple of the Tooth,cultural,2000,1000,0,false,2026-01-01,Research Benchmark Estimate
+Kandy,Royal Botanical Gardens Peradeniya,nature,3000,1500,0,false,2026-01-01,Research Benchmark Estimate
+Kandy,Kandy Lake Promenade,nature,0,0,0,true,2026-01-01,Research Benchmark Estimate
+Nuwara Eliya,Pedro Tea Estate,cultural,1000,500,500,false,2026-01-01,Research Benchmark Estimate
+Nuwara Eliya,Horton Plains National Park,nature,10000,5000,0,false,2026-01-01,Research Benchmark Estimate
+Nuwara Eliya,Gregory Lake Promenade,nature,500,250,1500,false,2026-01-01,Research Benchmark Estimate
+Ella,Nine Arches Bridge,nature,0,0,0,true,2026-01-01,Research Benchmark Estimate
+Ella,Little Adam's Peak,nature,0,0,0,true,2026-01-01,Research Benchmark Estimate
+Ella,Ravana Zip Line,adventure,0,0,8000,false,2026-01-01,Research Benchmark Estimate
+Galle,Galle Fort Historic Walk,cultural,0,0,0,true,2026-01-01,Research Benchmark Estimate
+Galle,Galle National Museum,cultural,1000,500,0,false,2026-01-01,Research Benchmark Estimate
+Galle,Unawatuna Jungle Beach Snorkeling,beach,0,0,4000,false,2026-01-01,Research Benchmark Estimate
+Sigiriya,Sigiriya Rock Fortress,cultural,11000,5500,0,false,2026-01-01,Research Benchmark Estimate
+Sigiriya,Pidurangala Rock,nature,1000,500,0,false,2026-01-01,Research Benchmark Estimate
+Polonnaruwa,Polonnaruwa Ancient City Ruins,cultural,9000,4500,0,false,2026-01-01,Research Benchmark Estimate
+Polonnaruwa,Parakrama Samudra Lake,nature,0,0,0,true,2026-01-01,Research Benchmark Estimate
+Yala,Yala National Park Safari,wildlife,11500,5750,12000,false,2026-01-01,Research Benchmark Estimate
+Udawalawe,Udawalawe Elephant Transit Home,wildlife,2000,1000,0,false,2026-01-01,Research Benchmark Estimate
+Udawalawe,Udawalawe National Park Safari,wildlife,9000,4500,10000,false,2026-01-01,Research Benchmark Estimate
+Kitulgala,Kitulgala White Water Rafting,adventure,0,0,6000,false,2026-01-01,Research Benchmark Estimate
+Kitulgala,Makandawa Forest Reserve Trekking,nature,1000,500,2000,false,2026-01-01,Research Benchmark Estimate
+Bentota,Bentota River Safari,adventure,0,0,5000,false,2026-01-01,Research Benchmark Estimate
+Bentota,Kosgoda Turtle Hatchery,nature,1000,500,0,false,2026-01-01,Research Benchmark Estimate
+Mirissa,Mirissa Whale Watching Boat Tour,wildlife,15000,7500,0,false,2026-01-01,Research Benchmark Estimate
+Mirissa,Coconut Tree Hill,beach,0,0,0,true,2026-01-01,Research Benchmark Estimate
+Trincomalee,Pigeon Island Snorkeling,nature,8000,4000,5000,false,2026-01-01,Research Benchmark Estimate
+Trincomalee,Koneswaram Temple,cultural,0,0,0,true,2026-01-01,Research Benchmark Estimate
+Anuradhapura,Anuradhapura Sacred City,cultural,9000,4500,0,false,2026-01-01,Research Benchmark Estimate
+Jaffna,Jaffna Fort,cultural,0,0,0,true,2026-01-01,Research Benchmark Estimate
+Jaffna,Nallur Kandaswamy Kovil,cultural,0,0,0,true,2026-01-01,Research Benchmark Estimate
+Arugam Bay,Arugam Bay Surf Lesson,adventure,0,0,6000,false,2026-01-01,Research Benchmark Estimate
+Arugam Bay,Kumana Safari,wildlife,9000,4500,10000,false,2026-01-01,Research Benchmark Estimate
+Colombo,Gangaramaya Temple,cultural,500,250,0,false,2026-01-01,Research Benchmark Estimate
+Colombo,Galle Face Green Promenade,beach,0,0,0,true,2026-01-01,Research Benchmark Estimate

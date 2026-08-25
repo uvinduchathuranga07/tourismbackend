@@ -1,0 +1,5 @@
+fuel_type,price_lkr_per_liter,effective_date
+petrol_92,311.00,2026-01-01
+petrol_95,363.00,2026-01-01
+diesel,283.00,2026-01-01
+super_diesel,319.00,2026-01-01

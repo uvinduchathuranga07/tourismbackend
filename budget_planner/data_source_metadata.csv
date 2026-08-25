@@ -1,0 +1,10 @@
+component,source_type,source_name,effective_date,last_updated,refresh_interval_days,reliability_score,notes
+route,research_benchmark,Research Benchmark Estimate,2026,2026-08-01,30,75,Sri Lanka hub route distance and geographic benchmark data
+fuel,research_benchmark,Research Benchmark Estimate,2026,2026-08-01,14,75,National fuel price and vehicle fuel efficiency benchmark data
+hotel,research_benchmark,Research Benchmark Estimate,2026,2026-08-01,30,75,Hotel pricing tier and location accommodation benchmark data
+food,research_benchmark,Research Benchmark Estimate,2026,2026-08-01,60,75,Local dining and food tier benchmark data
+attractions,research_benchmark,Research Benchmark Estimate,2026,2026-08-01,90,75,Tourist attraction entry fees and schedule benchmark data
+public_transport,research_benchmark,Research Benchmark Estimate,2026,2026-08-01,30,75,Sri Lanka railway and bus fare benchmark data
+schedule,research_benchmark,Research Benchmark Estimate,2026,2026-08-01,30,75,Context-aware travel time and attraction visit duration benchmark data
+budget_model,research_benchmark,Research Benchmark Estimate,2026,2026-08-01,90,75,XGBoost budget regression model trained on travel survey benchmarks
+route_model,research_benchmark,Research Benchmark Estimate,2026,2026-08-01,90,75,XGBoost route classification model trained on travel survey benchmarks

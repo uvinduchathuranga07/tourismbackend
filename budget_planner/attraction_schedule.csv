@@ -1,0 +1,23 @@
+destination,attraction_name,category,opening_time,closing_time,recommended_visit_duration_hours,preferred_period,minimum_visit_duration_hours,maximum_visit_duration_hours,best_day_type,data_source
+Kandy,Temple of the Tooth,cultural,05:30,20:00,1.5,morning,1.0,2.0,all_days,Research Benchmark Estimate
+Kandy,Royal Botanical Gardens,nature,08:00,18:00,2.5,morning,1.5,3.5,all_days,Research Benchmark Estimate
+Kandy,Kandy Lake & Viewpoint,nature,06:00,19:00,1.0,evening,0.5,1.5,all_days,Research Benchmark Estimate
+Ella,Nine Arches Bridge,nature,06:00,18:00,1.5,morning,1.0,2.5,all_days,Research Benchmark Estimate
+Ella,Little Adam's Peak,nature,06:00,18:00,2.0,morning,1.5,3.0,all_days,Research Benchmark Estimate
+Ella,Ravana Falls,nature,07:00,17:30,1.0,afternoon,0.5,1.5,all_days,Research Benchmark Estimate
+Nuwara Eliya,Horton Plains,nature,06:00,16:00,4.0,early_morning,3.0,5.0,all_days,Research Benchmark Estimate
+Nuwara Eliya,Gregory Lake,nature,08:00,18:00,1.5,afternoon,1.0,2.5,all_days,Research Benchmark Estimate
+Nuwara Eliya,Pedro Tea Estate,cultural,08:30,17:00,1.5,morning,1.0,2.0,all_days,Research Benchmark Estimate
+Galle,Galle Dutch Fort,cultural,06:00,20:00,2.5,afternoon,1.5,3.5,all_days,Research Benchmark Estimate
+Galle,Galle Lighthouse,cultural,06:00,19:00,1.0,evening,0.5,1.5,all_days,Research Benchmark Estimate
+Mirissa,Mirissa Whale Watching,wildlife,06:00,12:00,4.0,early_morning,3.0,5.0,all_days,Research Benchmark Estimate
+Mirissa,Coconut Tree Hill,nature,06:00,18:30,1.0,evening,0.5,1.5,all_days,Research Benchmark Estimate
+Sigiriya,Sigiriya Rock Fortress,cultural,06:30,17:30,3.0,morning,2.0,4.0,all_days,Research Benchmark Estimate
+Sigiriya,Pidurangala Rock,nature,05:00,18:00,2.5,early_morning,2.0,3.0,all_days,Research Benchmark Estimate
+Polonnaruwa,Ancient City Ruins,cultural,07:00,17:30,3.5,morning,2.5,4.5,all_days,Research Benchmark Estimate
+Anuradhapura,Sacred City & Bodhi Tree,cultural,06:00,19:00,3.5,morning,2.5,4.5,all_days,Research Benchmark Estimate
+Yala,Yala National Park Safari,wildlife,06:00,18:00,4.0,early_morning,3.0,5.0,all_days,Research Benchmark Estimate
+Udawalawe,Udawalawe National Park Safari,wildlife,06:00,18:00,3.5,early_morning,2.5,4.5,all_days,Research Benchmark Estimate
+Kitulgala,White Water Rafting,adventure,08:00,17:00,3.0,morning,2.0,4.0,all_days,Research Benchmark Estimate
+Colombo,Gangaramaya Temple,cultural,06:00,20:00,1.5,morning,1.0,2.0,all_days,Research Benchmark Estimate
+Colombo,Galle Face Green,nature,06:00,22:00,1.5,evening,1.0,2.5,all_days,Research Benchmark Estimate

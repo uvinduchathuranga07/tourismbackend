@@ -1,0 +1,45 @@
+origin,destination,transport_mode,fare_class,adult_fare_lkr,child_fare_lkr,effective_date,data_source
+Colombo,Kandy,train,second_class,500,250,2026-01-01,Research Benchmark Estimate
+Colombo,Kandy,train,third_class,240,120,2026-01-01,Research Benchmark Estimate
+Colombo,Kandy,train,first_class,1500,750,2026-01-01,Research Benchmark Estimate
+Colombo,Kandy,bus,ordinary,400,200,2026-01-01,Research Benchmark Estimate
+Colombo,Kandy,bus,luxury,800,400,2026-01-01,Research Benchmark Estimate
+Kandy,Nuwara Eliya,train,second_class,400,200,2026-01-01,Research Benchmark Estimate
+Kandy,Nuwara Eliya,train,third_class,200,100,2026-01-01,Research Benchmark Estimate
+Kandy,Nuwara Eliya,bus,ordinary,350,175,2026-01-01,Research Benchmark Estimate
+Kandy,Nuwara Eliya,bus,luxury,700,350,2026-01-01,Research Benchmark Estimate
+Nuwara Eliya,Ella,train,second_class,300,150,2026-01-01,Research Benchmark Estimate
+Nuwara Eliya,Ella,train,third_class,160,80,2026-01-01,Research Benchmark Estimate
+Nuwara Eliya,Ella,bus,ordinary,300,150,2026-01-01,Research Benchmark Estimate
+Ella,Colombo,train,second_class,800,400,2026-01-01,Research Benchmark Estimate
+Ella,Colombo,train,third_class,400,200,2026-01-01,Research Benchmark Estimate
+Ella,Colombo,train,first_class,2500,1250,2026-01-01,Research Benchmark Estimate
+Ella,Colombo,bus,ordinary,750,375,2026-01-01,Research Benchmark Estimate
+Colombo,Galle,train,second_class,400,200,2026-01-01,Research Benchmark Estimate
+Colombo,Galle,train,third_class,200,100,2026-01-01,Research Benchmark Estimate
+Colombo,Galle,bus,luxury,900,450,2026-01-01,Research Benchmark Estimate
+Colombo,Galle,bus,ordinary,450,225,2026-01-01,Research Benchmark Estimate
+Galle,Mirissa,bus,ordinary,150,75,2026-01-01,Research Benchmark Estimate
+Galle,Mirissa,train,second_class,200,100,2026-01-01,Research Benchmark Estimate
+Galle,Bentota,bus,ordinary,200,100,2026-01-01,Research Benchmark Estimate
+Galle,Bentota,train,second_class,250,125,2026-01-01,Research Benchmark Estimate
+Bentota,Hikkaduwa,bus,ordinary,150,75,2026-01-01,Research Benchmark Estimate
+Bentota,Hikkaduwa,train,second_class,180,90,2026-01-01,Research Benchmark Estimate
+Kandy,Sigiriya,bus,ordinary,300,150,2026-01-01,Research Benchmark Estimate
+Kandy,Sigiriya,bus,luxury,600,300,2026-01-01,Research Benchmark Estimate
+Sigiriya,Polonnaruwa,bus,ordinary,250,125,2026-01-01,Research Benchmark Estimate
+Polonnaruwa,Anuradhapura,bus,ordinary,300,150,2026-01-01,Research Benchmark Estimate
+Anuradhapura,Colombo,train,second_class,600,300,2026-01-01,Research Benchmark Estimate
+Anuradhapura,Colombo,train,third_class,300,150,2026-01-01,Research Benchmark Estimate
+Anuradhapura,Colombo,bus,luxury,1200,600,2026-01-01,Research Benchmark Estimate
+Jaffna,Colombo,train,second_class,1200,600,2026-01-01,Research Benchmark Estimate
+Jaffna,Colombo,train,first_class,3200,1600,2026-01-01,Research Benchmark Estimate
+Jaffna,Colombo,bus,luxury,2200,1100,2026-01-01,Research Benchmark Estimate
+Trincomalee,Colombo,train,second_class,800,400,2026-01-01,Research Benchmark Estimate
+Trincomalee,Colombo,bus,luxury,1600,800,2026-01-01,Research Benchmark Estimate
+Yala,Galle,bus,ordinary,500,250,2026-01-01,Research Benchmark Estimate
+Udawalawe,Colombo,bus,ordinary,600,300,2026-01-01,Research Benchmark Estimate
+Kitulgala,Colombo,bus,ordinary,300,150,2026-01-01,Research Benchmark Estimate
+Badulla,Ella,train,second_class,250,125,2026-01-01,Research Benchmark Estimate
+Badulla,Ella,bus,ordinary,200,100,2026-01-01,Research Benchmark Estimate
+Arugam Bay,Colombo,bus,luxury,2500,1250,2026-01-01,Research Benchmark Estimate

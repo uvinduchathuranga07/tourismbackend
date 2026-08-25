@@ -1,0 +1,61 @@
+destination,food_tier,breakfast_lkr,lunch_lkr,dinner_lkr,snacks_lkr
+default,budget,400,600,700,250
+default,standard,1000,1500,1800,450
+default,premium,2500,3800,4800,1200
+Colombo,budget,450,650,750,300
+Colombo,standard,1200,1700,2000,500
+Colombo,premium,3000,4500,5500,1500
+Kandy,budget,400,600,700,250
+Kandy,standard,1000,1500,1800,450
+Kandy,premium,2500,3800,4800,1200
+Nuwara Eliya,budget,450,650,750,250
+Nuwara Eliya,standard,1100,1600,1900,450
+Nuwara Eliya,premium,2800,4000,5000,1300
+Ella,budget,450,700,800,300
+Ella,standard,1200,1800,2100,500
+Ella,premium,3000,4200,5200,1400
+Galle,budget,450,700,800,300
+Galle,standard,1250,1850,2200,550
+Galle,premium,3200,4600,5800,1500
+Mirissa,budget,450,700,800,300
+Mirissa,standard,1200,1800,2100,500
+Mirissa,premium,3000,4400,5400,1400
+Bentota,budget,450,650,750,250
+Bentota,standard,1150,1700,2000,450
+Bentota,premium,2900,4200,5200,1300
+Hikkaduwa,budget,400,650,750,250
+Hikkaduwa,standard,1100,1650,1950,450
+Hikkaduwa,premium,2800,4100,5100,1300
+Unawatuna,budget,450,700,800,300
+Unawatuna,standard,1200,1750,2100,500
+Unawatuna,premium,3000,4300,5300,1400
+Sigiriya,budget,400,600,700,250
+Sigiriya,standard,1000,1500,1800,450
+Sigiriya,premium,2600,3900,4900,1200
+Polonnaruwa,budget,400,600,700,200
+Polonnaruwa,standard,950,1450,1750,400
+Polonnaruwa,premium,2400,3600,4600,1100
+Anuradhapura,budget,400,600,700,200
+Anuradhapura,standard,950,1450,1750,400
+Anuradhapura,premium,2400,3600,4600,1100
+Jaffna,budget,350,550,650,200
+Jaffna,standard,900,1400,1700,400
+Jaffna,premium,2300,3500,4500,1000
+Trincomalee,budget,400,600,700,250
+Trincomalee,standard,1050,1550,1850,450
+Trincomalee,premium,2600,3900,4900,1200
+Yala,budget,450,650,750,250
+Yala,standard,1100,1600,1900,450
+Yala,premium,2800,4100,5100,1300
+Udawalawe,budget,400,600,700,200
+Udawalawe,standard,1000,1500,1800,400
+Udawalawe,premium,2500,3700,4700,1100
+Kitulgala,budget,400,600,700,200
+Kitulgala,standard,950,1450,1750,400
+Kitulgala,premium,2400,3600,4600,1100
+Badulla,budget,350,550,650,200
+Badulla,standard,900,1350,1650,400
+Badulla,premium,2200,3400,4400,1000
+Arugam Bay,budget,450,700,800,300
+Arugam Bay,standard,1200,1800,2100,500
+Arugam Bay,premium,3000,4400,5400,1400
