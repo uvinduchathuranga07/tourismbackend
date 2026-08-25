@@ -87,6 +87,50 @@
             }
         ]
     },
+    "travel_timing": {
+        "title": "Best Time to Visit Sri Lanka",
+        "description": "Sri Lanka has two monsoon seasons that affect different coasts at different times, so the best time to visit depends on which region you plan to explore.",
+        "guidance": [
+            "December to March is the best time for the west and south coasts (Colombo, Galle, Mirissa, Bentota) and the hill country (Kandy, Nuwara Eliya, Ella).",
+            "May to September is the best time for the east coast (Trincomalee, Arugam Bay, Nilaveli).",
+            "The cultural triangle (Anuradhapura, Polonnaruwa, Sigiriya, Dambulla) can be visited year-round.",
+            "Shoulder months (April and September to November) offer fewer crowds with a moderate chance of rain.",
+            "Peak tourist season and prices run from December to April."
+        ],
+        "avoid": [
+            "Visiting the west/south coast during the Yala monsoon (May to September)",
+            "Visiting the east coast during the Maha monsoon (October to January)"
+        ],
+        "recommended_locations": [
+            "Galle",
+            "Mirissa",
+            "Kandy",
+            "Ella",
+            "Sigiriya"
+        ]
+    },
+    "local_food": {
+        "title": "Sri Lankan Food & Dining Culture",
+        "description": "Traditional dishes and dining customs to know when eating in Sri Lanka.",
+        "guidance": [
+            "Rice and curry is the staple meal, usually with several vegetable, meat, or fish curries.",
+            "Hoppers (appa) and kottu roti are popular street food and evening meals.",
+            "Many Sri Lankans eat with their right hand rather than cutlery.",
+            "Meals are often mildly to very spicy; ask for 'less spicy' if you are sensitive to heat.",
+            "Try local fruits like king coconut (thambili), rambutan, and wood apple."
+        ],
+        "avoid": [
+            "Eating or passing food with your left hand",
+            "Assuming all dishes are mild — ask before ordering if unsure",
+            "Wasting food, which is considered disrespectful"
+        ],
+        "recommended_locations": [
+            "Colombo food street markets",
+            "Kandy local eateries",
+            "Galle Fort cafes",
+            "Jaffna for northern Tamil cuisine"
+        ]
+    },
     "festival_guidance": {
         "title": "Festival Guidance",
         "description": "Cultural awareness tips during Sri Lankan festivals and religious events.",

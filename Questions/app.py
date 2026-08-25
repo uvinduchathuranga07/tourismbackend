@@ -37,6 +37,68 @@ print("✅ Cultural knowledge base loaded")
 
 CONFIDENCE_THRESHOLD = 0.45
 
+# The trained classifier was fit on a tiny, narrow dataset and is unreliable
+# even within the intents it knows (e.g. "Etiquette for locals" returns
+# "unknown"; "What should I wear when visiting a temple?" returns
+# "festival_guidance"). It also has no "unknown" class, so anything outside
+# its 5 intents (like travel-timing or food questions) gets forced into
+# whichever bucket scores highest, often with misleadingly high confidence.
+#
+# Since retraining isn't currently an option, intent detection is handled by
+# keyword rules first — one per intent, checked in the order below (most
+# specific/narrow vocabulary first, broadest last so it doesn't shadow the
+# others). The ML model is only consulted as a fallback for questions that
+# don't match any rule.
+INTENT_RULES = [
+    ("language_phrase", [
+        r"\bphrase\b", r"\blanguage\b", r"\bsinhala\b", r"\btamil\b",
+        r"\bgreeting\b", r"\btranslat\w*\b", r"how (do|can) (i|you) say",
+        r"\bsay hello\b",
+    ]),
+    ("photography_rules", [
+        r"\bphoto\w*\b", r"\bpictures?\b", r"\bcamera\b", r"\bselfie\w*\b",
+        r"\bdrone\w*\b", r"\bfilming\b", r"\bvideo\s*record\w*\b",
+    ]),
+    ("festival_guidance", [
+        r"\bfestival\w*\b", r"\bperahera\b", r"\bvesak\b", r"\bpongal\b",
+        r"\bprocession\w*\b", r"\bcelebrat\w*\b", r"\bnew year\b",
+    ]),
+    ("travel_timing", [
+        r"\bbest\s+(time|season|month)s?\b.*\bvisit\b",
+        r"\bwhen\b.*\b(should|to|can)\b.*\bvisit\b",
+        r"\bwhich\s+(season|month)s?\b",
+        r"\bgood\s+time\b.*\bvisit\b",
+        r"\bmonsoon\s+season\b",
+        r"\bweather\b.*\bvisit\b",
+    ]),
+    ("local_food", [
+        r"\bfood\w*\b", r"\bcuisine\w*\b", r"\bdish\w*\b", r"\beat\w*\b",
+        r"\bmeals?\b", r"\bcurry\b", r"\brestaurants?\b",
+    ]),
+    ("dress_code", [
+        r"\bwear\w*\b", r"\bclothing\b", r"\bclothes\b", r"\bdress\s*code\b",
+        r"\boutfit\b", r"\battire\b", r"\bshorts\b", r"\bskirts?\b",
+        r"\bsleeveless\b",
+    ]),
+    ("etiquette", [
+        r"\betiquette\b", r"\bmanners\b", r"\bbehav\w*\b",
+        r"\bremove.*shoes\b", r"\bpoint.*feet\b", r"\btouch.*monks?\b",
+        r"\bcustoms?\b",
+    ]),
+]
+
+INTENT_RULES = [
+    (intent, re.compile("|".join(patterns), re.IGNORECASE))
+    for intent, patterns in INTENT_RULES
+]
+
+
+def match_rule_based_intent(question):
+    for intent, pattern in INTENT_RULES:
+        if pattern.search(question):
+            return intent
+    return None
+
 
 # =====================================================
 # HOME ROUTE
@@ -152,7 +214,28 @@ def predict():
             })
 
         # =============================================
-        # PREDICT PROBABILITIES
+        # RULE-BASED INTENT MATCH (primary — the ML
+        # model is unreliable, see INTENT_RULES comment)
+        # =============================================
+
+        rule_intent = match_rule_based_intent(question)
+
+        if rule_intent is not None:
+
+            return jsonify({
+                "success": True,
+                "question": question,
+                "predicted_intent": rule_intent,
+                "confidence": 1.0,
+                "response": cultural_data.get(rule_intent, {
+                    "title": "No Data",
+                    "description": "No cultural guidance available."
+                })
+            })
+
+        # =============================================
+        # PREDICT PROBABILITIES (fallback for questions
+        # no keyword rule recognized)
         # =============================================
 
         probabilities = model.predict_proba([question])[0]
