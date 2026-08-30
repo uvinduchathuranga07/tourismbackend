@@ -1,6 +1,6 @@
 """
-Final AI Recommendation & Explainability Engine for Component 2 — Step 7 (FINAL STEP).
-Combines outputs from Steps 1-6 into a single transparent score, decision level, ranking, trade-off analysis, and explainability advantages.
+AI Route Recommendation, Optimization & Explainability Engine for Component 2 — Step 7 (FINAL STEP).
+Combines destination-level outputs from Steps 1-6 into transparent route recommendations, decision levels, route candidate rankings, trade-off analysis, and explainability.
 """
 
 

@@ -4,6 +4,7 @@ Provides deterministic travel time estimation, distance metrics, transport optio
 """
 
 ROUTE_DISTANCE_KM = {
+    # From Colombo
     ("Colombo", "Ella"): 205,
     ("Colombo", "Galle"): 120,
     ("Colombo", "Sigiriya"): 175,
@@ -18,7 +19,32 @@ ROUTE_DISTANCE_KM = {
     ("Colombo", "Trincomalee"): 265,
     ("Colombo", "Yala"): 260,
     ("Colombo", "Hikkaduwa"): 100,
-    ("Colombo", "Dambulla"): 150
+    ("Colombo", "Dambulla"): 150,
+
+    # Key Inter-City Pairwise Segments
+    ("Kandy", "Nuwara Eliya"): 76,
+    ("Nuwara Eliya", "Ella"): 55,
+    ("Kandy", "Ella"): 135,
+    ("Kandy", "Sigiriya"): 90,
+    ("Kandy", "Dambulla"): 72,
+    ("Kandy", "Polonnaruwa"): 140,
+    ("Kandy", "Anuradhapura"): 138,
+    ("Sigiriya", "Dambulla"): 25,
+    ("Sigiriya", "Polonnaruwa"): 67,
+    ("Dambulla", "Anuradhapura"): 65,
+    ("Anuradhapura", "Polonnaruwa"): 105,
+    ("Anuradhapura", "Jaffna"): 195,
+    ("Polonnaruwa", "Trincomalee"): 105,
+    ("Dambulla", "Trincomalee"): 108,
+    ("Galle", "Mirissa"): 35,
+    ("Galle", "Hikkaduwa"): 20,
+    ("Bentota", "Hikkaduwa"): 35,
+    ("Bentota", "Galle"): 55,
+    ("Mirissa", "Yala"): 145,
+    ("Ella", "Yala"): 95,
+    ("Ella", "Arugam Bay"): 135,
+    ("Yala", "Arugam Bay"): 160,
+    ("Trincomalee", "Jaffna"): 235
 }
 
 TRANSPORT_CONFIG = {
@@ -43,6 +69,28 @@ TRANSPORT_CONFIG = {
 }
 
 
+import math
+
+DESTINATION_COORDINATES = {
+    "Colombo": (6.9271, 79.8612),
+    "Ella": (6.8667, 81.0466),
+    "Galle": (6.0535, 80.2210),
+    "Sigiriya": (7.9570, 80.7603),
+    "Kandy": (7.2906, 80.6337),
+    "Nuwara Eliya": (6.9497, 80.7891),
+    "Mirissa": (5.9483, 80.4716),
+    "Bentota": (6.4218, 79.9950),
+    "Arugam Bay": (6.8404, 81.8378),
+    "Anuradhapura": (8.3114, 80.4037),
+    "Polonnaruwa": (7.9403, 81.0188),
+    "Jaffna": (9.6615, 80.0255),
+    "Trincomalee": (8.5874, 81.2152),
+    "Yala": (6.3725, 81.5185),
+    "Hikkaduwa": (6.1407, 80.1010),
+    "Dambulla": (7.8742, 80.6511)
+}
+
+
 def calculate_distance(origin, destination):
     """Calculates route distance in kilometers from origin to destination."""
     orig = origin.strip().title() if origin else "Colombo"
@@ -54,6 +102,21 @@ def calculate_distance(origin, destination):
     dist = ROUTE_DISTANCE_KM.get((orig, dest)) or ROUTE_DISTANCE_KM.get((dest, orig))
     if dist is not None:
         return dist, False
+
+    # Coordinate-based Haversine distance with road winding factor
+    c1 = DESTINATION_COORDINATES.get(orig)
+    c2 = DESTINATION_COORDINATES.get(dest)
+    if c1 and c2:
+        lat1, lon1 = c1
+        lat2, lon2 = c2
+        r = 6371.0  # Earth radius km
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        straight_km = r * c
+        road_km = int(round(straight_km * 1.35))
+        return max(10, road_km), True
 
     # Benchmark fallback estimation for unlisted destinations
     return 150, True

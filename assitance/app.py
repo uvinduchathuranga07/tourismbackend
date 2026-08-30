@@ -11,6 +11,7 @@ try:
     from .event_activity_engine import build_activity_recommendations
     from .event_timing_engine import build_event_timing_summary
     from .final_recommendation_engine import build_final_recommendation, calculate_overall_score
+    from .route_recommendation_engine import build_route_recommendations
 except ImportError:  # running as a script
     from weather_recommendation_engine import calculate_weather_suitability
     from travel_transport_engine import build_travel_transport_summary
@@ -18,6 +19,7 @@ except ImportError:  # running as a script
     from event_activity_engine import build_activity_recommendations
     from event_timing_engine import build_event_timing_summary
     from final_recommendation_engine import build_final_recommendation, calculate_overall_score
+    from route_recommendation_engine import build_route_recommendations
 
 bp = Blueprint("assistance", __name__)
 
@@ -360,7 +362,19 @@ def recommend():
     weather_override = data.get("weather", {})
     crowd_input = data.get("crowd", {})
     origin_input = data.get("origin", "Colombo")
+    if not origin_input or not isinstance(origin_input, str):
+        origin_input = "Colombo"
+
+    try:
+        days_input = int(data.get("days", 1))
+        if days_input < 1:
+            days_input = 1
+    except (ValueError, TypeError):
+        days_input = 1
+
     transport_mode_input = data.get("transport_mode", "car")
+    if not transport_mode_input or not isinstance(transport_mode_input, str):
+        transport_mode_input = "car"
 
     if not isinstance(weather_override, dict):
         weather_override = {}
@@ -512,7 +526,15 @@ def recommend():
         item["score"] = ai_rec["overall_score"]  # Sync primary score
         final_results.append(item)
 
+    route_recs = build_route_recommendations(
+        origin=origin_input,
+        days=days_input,
+        transport_mode=transport_mode_input,
+        evaluated_items=final_results
+    )
+
     return jsonify({
+        "route_recommendations": route_recs,
         "recommendations": final_results
     })
 
