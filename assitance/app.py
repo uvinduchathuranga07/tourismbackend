@@ -129,6 +129,43 @@ crowd_columns = joblib.load(BASE_DIR / "crowd_columns.pkl")
 weather_columns = joblib.load(BASE_DIR / "weather_columns.pkl")
 
 
+DESTINATION_ALIASES = {
+    "nuwara eliya": "Nuwara Eliya",
+    "nuwaraeliya": "Nuwara Eliya",
+    "nuwara-eliya": "Nuwara Eliya",
+    "arugam bay": "Arugam Bay",
+    "arugambay": "Arugam Bay",
+    "trincomalee": "Trincomalee",
+    "trinco": "Trincomalee",
+    "ella": "Ella",
+    "galle": "Galle",
+    "sigiriya": "Sigiriya",
+    "kandy": "Kandy",
+    "mirissa": "Mirissa",
+    "bentota": "Bentota",
+    "anuradhapura": "Anuradhapura",
+    "polonnaruwa": "Polonnaruwa",
+    "jaffna": "Jaffna",
+    "yala": "Yala",
+    "hikkaduwa": "Hikkaduwa",
+    "dambulla": "Dambulla"
+}
+
+
+def parse_user_locations(text: str):
+    """Extracts explicitly mentioned target destinations from user natural language input."""
+    if not text or not isinstance(text, str):
+        return []
+    t = text.lower()
+    extracted = []
+    # Sort aliases by length descending so longer phrases match first
+    for alias, main_name in sorted(DESTINATION_ALIASES.items(), key=lambda x: len(x[0]), reverse=True):
+        if alias in t:
+            if main_name not in extracted:
+                extracted.append(main_name)
+    return extracted
+
+
 def parse_user_preferences(text: str):
     """Deterministically extracts user tourism intent categories from natural language input."""
     if not text or not isinstance(text, str):
@@ -139,6 +176,11 @@ def parse_user_preferences(text: str):
         if any(kw in t for kw in keywords):
             if pref not in extracted:
                 extracted.append(pref)
+    locations = parse_user_locations(text)
+    for loc in locations:
+        loc_tag = f"location_{loc.lower().replace(' ', '_')}"
+        if loc_tag not in extracted:
+            extracted.append(loc_tag)
     return extracted
 
 
@@ -147,7 +189,8 @@ def parse_user(text):
     text_str = text.lower() if isinstance(text, str) else ""
     return {
         "prefer_low_crowd": "low crowd" in text_str or "less crowd" in text_str or "quiet" in text_str or "peaceful" in text_str,
-        "preferences": parse_user_preferences(text_str)
+        "preferences": parse_user_preferences(text_str),
+        "requested_locations": parse_user_locations(text_str)
     }
 
 
@@ -271,10 +314,13 @@ def predict_weather(location, weather_input):
     return {0: "Good", 1: "Moderate", 2: "Poor"}[pred]
 
 
-def calculate_preference_match_and_reasons(place, user_preferences, crowd_val, weather_val):
+def calculate_preference_match_and_reasons(place, user_preferences, crowd_val, weather_val, requested_locations=None):
     """Computes preference matching metadata and factor-based recommendation explanations."""
     dest_tags = DESTINATION_PROFILES.get(place, [])
     matched_tags = []
+    requested = requested_locations or []
+
+    is_explicitly_requested = place in requested
 
     for pref in user_preferences:
         if pref in dest_tags:
@@ -282,15 +328,23 @@ def calculate_preference_match_and_reasons(place, user_preferences, crowd_val, w
         elif pref == "low_crowd" and crowd_val < 120:
             matched_tags.append(pref)
 
+    if is_explicitly_requested:
+        matched_tags.append("explicit_request")
+
     # Compute preference match score
-    if user_preferences:
+    if is_explicitly_requested:
+        match_score = 100
+    elif user_preferences:
         match_score = int(round((len(matched_tags) / len(user_preferences)) * 100.0))
         match_score = min(100, max(0, match_score))
     else:
         match_score = 85
 
     reasons = []
-    
+
+    if is_explicitly_requested:
+        reasons.append(f"Explicitly requested target destination: {place}")
+
     # Generate explanations strictly derived from actual scoring factors
     for tag in matched_tags:
         if tag == "nature":
@@ -382,6 +436,15 @@ def recommend():
         crowd_input = {}
 
     user_preferences = parse_user_preferences(user_text)
+    requested_locations = parse_user_locations(user_text)
+
+    # Infer origin from text if specified as 'from <location>'
+    if origin_input == "Colombo" and "from " in user_text.lower():
+        t_lower = user_text.lower()
+        for alias, main_name in sorted(DESTINATION_ALIASES.items(), key=lambda x: len(x[0]), reverse=True):
+            if f"from {alias}" in t_lower:
+                origin_input = main_name
+                break
 
     raw_results = []
 
@@ -434,7 +497,9 @@ def recommend():
             crowd_safety=crowd_safety
         )
 
-        match_and_reasons = calculate_preference_match_and_reasons(place, user_preferences, crowd, weather_display)
+        match_and_reasons = calculate_preference_match_and_reasons(
+            place, user_preferences, crowd, weather_display, requested_locations=requested_locations
+        )
         p_match_score = match_and_reasons["preference_match"]["score"]
         w_score = weather_suitability.get("score", 85)
         t_score = travel_transport.get("transport_score", 85)
@@ -530,7 +595,8 @@ def recommend():
         origin=origin_input,
         days=days_input,
         transport_mode=transport_mode_input,
-        evaluated_items=final_results
+        evaluated_items=final_results,
+        requested_destinations=requested_locations
     )
 
     return jsonify({

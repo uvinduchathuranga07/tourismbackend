@@ -13,13 +13,15 @@ except ImportError:
     from final_recommendation_engine import classify_decision_level
 
 
-def select_suitable_destinations(evaluated_items, top_n=6):
+def select_suitable_destinations(evaluated_items, top_n=6, requested_destinations=None):
     """
     Selects top suitable destinations evaluated by Steps 1-6.
-    Filters out low-scoring places unless insufficient alternatives exist.
+    Filters out low-scoring places unless explicitly requested or insufficient alternatives exist.
     """
     if not evaluated_items:
         return []
+
+    req_set = set(requested_destinations) if requested_destinations else set()
 
     # Sort evaluated items by overall score descending
     sorted_items = sorted(
@@ -28,12 +30,19 @@ def select_suitable_destinations(evaluated_items, top_n=6):
         reverse=True
     )
 
-    # Select top N candidates with score >= 50 if available
-    suitable = [item for item in sorted_items if item.get("score", 0) >= 50]
-    if len(suitable) < 3:
-        suitable = sorted_items[:top_n]
-    else:
-        suitable = suitable[:top_n]
+    suitable = []
+    # Always include explicitly requested destinations
+    for item in sorted_items:
+        if item["place"] in req_set and item not in suitable:
+            suitable.append(item)
+
+    # Add remaining high-scoring candidates
+    for item in sorted_items:
+        if item not in suitable:
+            if item.get("score", 0) >= 50 or len(suitable) < 3:
+                suitable.append(item)
+        if len(suitable) >= top_n + len(req_set):
+            break
 
     return suitable
 
@@ -128,50 +137,109 @@ def evaluate_route_feasibility(days, total_travel_time_hours, num_stops):
     }
 
 
-def generate_candidate_sequences(origin, days, suitable_destinations):
+def generate_candidate_sequences(origin, days, suitable_destinations, requested_destinations=None):
     """
     Generates at least 3 distinct route candidate node lists starting from origin.
-    Does NOT use random selection. Uses deterministic ordering algorithms.
+    When requested_destinations (e.g. Kandy) are provided, candidates are constructed
+    around requested destination(s) and nearby places.
     """
+    req_dests = [r for r in (requested_destinations or []) if r != origin]
     dest_names = [item["place"] for item in suitable_destinations if item["place"] != origin]
 
     if not dest_names:
         dest_names = ["Kandy", "Nuwara Eliya", "Ella"]
 
-    # Limit maximum route stops according to trip duration (days)
+    # Ensure all requested destinations are present in dest_names
+    for r in req_dests:
+        if r not in dest_names:
+            dest_names.insert(0, r)
+
     max_dest_count = min(len(dest_names), max(1, min(days + 1, 4)))
 
     candidates = []
 
-    # Strategy 1: Geographically Nearest Neighbor Sequence (Minimizes travel time)
-    curr = origin
-    unvisited = list(dest_names)
-    seq1 = [origin]
-    while unvisited and len(seq1) - 1 < max_dest_count:
-        nearest = min(unvisited, key=lambda d: calculate_distance(curr, d)[0])
-        seq1.append(nearest)
-        unvisited.remove(nearest)
-        curr = nearest
-    candidates.append(seq1)
+    if req_dests:
+        # User explicitly requested target destination(s) (e.g., Kandy)
+        primary_target = req_dests[0]
+        other_dests = [d for d in dest_names if d not in req_dests]
 
-    # Strategy 2: Highest Scored Destinations Ordered Geographically
-    top_by_score = sorted(suitable_destinations, key=lambda x: x.get("score", 0), reverse=True)
-    top_names = [x["place"] for x in top_by_score if x["place"] != origin][:max_dest_count]
-    
-    # Sort top_names by distance from origin
-    top_names_sorted = sorted(top_names, key=lambda d: calculate_distance(origin, d)[0])
-    seq2 = [origin] + top_names_sorted
-    if seq2 not in candidates:
-        candidates.append(seq2)
+        # Strategy 1: Target-centered sequence (Origin -> Target -> Nearest destinations to Target)
+        seq1 = [origin] + list(req_dests)
+        curr = primary_target
+        unvisited = list(other_dests)
+        while unvisited and len(seq1) - 1 < max_dest_count:
+            nearest = min(unvisited, key=lambda d: calculate_distance(curr, d)[0])
+            seq1.append(nearest)
+            unvisited.remove(nearest)
+            curr = nearest
+        candidates.append(seq1)
 
-    # Strategy 3: Alternative Circuit Sequence (Alternative subset of destinations)
-    if len(dest_names) >= 2:
-        alt_names = dest_names[1:] + [dest_names[0]]
-        alt_names_cut = alt_names[:max_dest_count]
-        alt_sorted = sorted(alt_names_cut, key=lambda d: calculate_distance(origin, d)[0])
-        seq3 = [origin] + alt_sorted
+        # Strategy 2: Alternative nearby cluster from Target
+        if other_dests:
+            sorted_by_target = sorted(other_dests, key=lambda d: calculate_distance(primary_target, d)[0])
+            alt_order = sorted_by_target[1:] + [sorted_by_target[0]] if len(sorted_by_target) > 1 else sorted_by_target
+            seq2 = [origin] + list(req_dests)
+            for d in alt_order:
+                if d not in seq2:
+                    seq2.append(d)
+                if len(seq2) - 1 >= max_dest_count:
+                    break
+            if seq2 not in candidates:
+                candidates.append(seq2)
+
+        # Strategy 3: Geographically ordered route from Origin through Target
+        sorted_from_origin = sorted(other_dests, key=lambda d: calculate_distance(origin, d)[0])
+        seq3 = [origin]
+        added_target = False
+        for d in sorted_from_origin:
+            d_origin_dist = calculate_distance(origin, d)[0]
+            target_origin_dist = calculate_distance(origin, primary_target)[0]
+            if not added_target and d_origin_dist >= target_origin_dist:
+                for r in req_dests:
+                    if r not in seq3:
+                        seq3.append(r)
+                added_target = True
+            if d not in seq3:
+                seq3.append(d)
+            if len(seq3) - 1 >= max_dest_count:
+                break
+        if not added_target:
+            for r in req_dests:
+                if r not in seq3:
+                    seq3.append(r)
         if seq3 not in candidates:
             candidates.append(seq3)
+
+    else:
+        # Strategy 1: Geographically Nearest Neighbor Sequence (Minimizes travel time)
+        curr = origin
+        unvisited = list(dest_names)
+        seq1 = [origin]
+        while unvisited and len(seq1) - 1 < max_dest_count:
+            nearest = min(unvisited, key=lambda d: calculate_distance(curr, d)[0])
+            seq1.append(nearest)
+            unvisited.remove(nearest)
+            curr = nearest
+        candidates.append(seq1)
+
+        # Strategy 2: Highest Scored Destinations Ordered Geographically
+        top_by_score = sorted(suitable_destinations, key=lambda x: x.get("score", 0), reverse=True)
+        top_names = [x["place"] for x in top_by_score if x["place"] != origin][:max_dest_count]
+        
+        # Sort top_names by distance from origin
+        top_names_sorted = sorted(top_names, key=lambda d: calculate_distance(origin, d)[0])
+        seq2 = [origin] + top_names_sorted
+        if seq2 not in candidates:
+            candidates.append(seq2)
+
+        # Strategy 3: Alternative Circuit Sequence (Alternative subset of destinations)
+        if len(dest_names) >= 2:
+            alt_names = dest_names[1:] + [dest_names[0]]
+            alt_names_cut = alt_names[:max_dest_count]
+            alt_sorted = sorted(alt_names_cut, key=lambda d: calculate_distance(origin, d)[0])
+            seq3 = [origin] + alt_sorted
+            if seq3 not in candidates:
+                candidates.append(seq3)
 
     # Fallback to ensure at least 3 candidates when sufficient places exist
     if len(candidates) < 3 and len(dest_names) >= 2:
@@ -236,12 +304,17 @@ def generate_daily_route_plan(days, route_nodes, segments, evaluated_map):
     return daily_plan
 
 
-def generate_route_explanations(route_nodes, overall_score, feasibility_info, backtracking_penalty, evaluated_map):
+def generate_route_explanations(route_nodes, overall_score, feasibility_info, backtracking_penalty, evaluated_map, requested_destinations=None):
     """
     Generates factor-backed 'why_recommended' explanations and practical 'tradeoffs'.
     """
     why = []
     tradeoffs = []
+
+    if requested_destinations:
+        req_matched = [r for r in requested_destinations if r in route_nodes]
+        if req_matched:
+            why.append(f"Includes your requested destination ({', '.join(req_matched)}) and nearby attractions")
 
     # Evaluate preference & weather alignment across route stops
     matched_prefs = set()
@@ -300,7 +373,7 @@ def generate_route_explanations(route_nodes, overall_score, feasibility_info, ba
     return why, tradeoffs
 
 
-def build_route_recommendations(origin="Colombo", days=1, transport_mode="car", evaluated_items=None):
+def build_route_recommendations(origin="Colombo", days=1, transport_mode="car", evaluated_items=None, requested_destinations=None):
     """
     Main Route Recommendation Engine pipeline.
     Builds, optimizes, scores, and ranks candidate travel routes.
@@ -309,9 +382,9 @@ def build_route_recommendations(origin="Colombo", days=1, transport_mode="car", 
         return []
 
     evaluated_map = {item["place"]: item for item in evaluated_items}
-    suitable_dests = select_suitable_destinations(evaluated_items, top_n=6)
+    suitable_dests = select_suitable_destinations(evaluated_items, top_n=6, requested_destinations=requested_destinations)
 
-    candidate_sequences = generate_candidate_sequences(origin, days, suitable_dests)
+    candidate_sequences = generate_candidate_sequences(origin, days, suitable_dests, requested_destinations=requested_destinations)
     route_results = []
 
     for seq in candidate_sequences:
@@ -351,20 +424,30 @@ def build_route_recommendations(origin="Colombo", days=1, transport_mode="car", 
         cs_scores = [evaluated_map.get(node, {}).get("crowd_safety", {}).get("overall_score", 75) for node in seq[1:]]
         w_cs_safety = (sum(w_scores) + sum(cs_scores)) / float(len(w_scores) + len(cs_scores)) if (w_scores and cs_scores) else 75.0
 
+        req_dests = [r for r in (requested_destinations or []) if r != origin]
+        if req_dests:
+            covered_count = sum(1 for r in req_dests if r in seq)
+            req_coverage_bonus = (covered_count / float(len(req_dests))) * 25.0
+        else:
+            req_coverage_bonus = 0.0
+
         # Exact Deterministic Route Score Formula:
-        # Route Score = Destination Quality * 0.30 + Travel Efficiency * 0.25 + Route Feasibility * 0.20 + Preference Alignment * 0.15 + Weather+Crowd+Safety * 0.10
+        # Route Score = Destination Quality * 0.30 + Travel Efficiency * 0.25 + Route Feasibility * 0.20 + Preference Alignment * 0.15 + Weather+Crowd+Safety * 0.10 + Requested Location Bonus
         overall_route_score = (
             (avg_dest_quality * 0.30) +
             (travel_efficiency * 0.25) +
             (feasibility_score * 0.20) +
             (pref_alignment * 0.15) +
-            (w_cs_safety * 0.10)
+            (w_cs_safety * 0.10) +
+            req_coverage_bonus
         )
         overall_route_score = int(round(min(100.0, max(0.0, overall_route_score))))
 
         decision = classify_decision_level(overall_route_score)
         daily_plan = generate_daily_route_plan(days, seq, segments, evaluated_map)
-        why_rec, tradeoffs = generate_route_explanations(seq, overall_route_score, feasibility_info, backtracking_pen, evaluated_map)
+        why_rec, tradeoffs = generate_route_explanations(
+            seq, overall_route_score, feasibility_info, backtracking_pen, evaluated_map, requested_destinations=requested_destinations
+        )
 
         route_display_str = " → ".join(seq)
 

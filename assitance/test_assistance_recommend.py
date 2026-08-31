@@ -109,6 +109,32 @@ class TestAssistanceRecommendStep1(unittest.TestCase):
         for key in required_keys:
             self.assertIn(key, first)
 
+    def test_11_location_extraction_kandy(self):
+        # 11. Test explicit location parsing
+        from app import parse_user_locations
+        extracted = parse_user_locations("i want to go to kandy")
+        self.assertIn("Kandy", extracted)
+
+    def test_12_explicit_kandy_recommendation(self):
+        # 12. Test route recommendations including Kandy and nearby places when user requests Kandy
+        res = self.client.post("/recommend", json={"user_text": "i want to go to kandy", "origin": "Colombo", "days": 3})
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()
+
+        # Check top destination is Kandy
+        recs = data["recommendations"]
+        self.assertEqual(recs[0]["place"], "Kandy")
+
+        # Check recommended route includes Kandy and nearby places
+        route_recs = data["route_recommendations"]
+        self.assertGreater(len(route_recs), 0)
+        top_route = route_recs[0]["route"]
+        self.assertIn("Kandy", top_route)
+        self.assertGreaterEqual(len(top_route), 2)
+        # Verify why_recommended mentions requested destination
+        why_list = route_recs[0]["why_recommended"]
+        self.assertTrue(any("Kandy" in w for w in why_list))
+
 
 if __name__ == "__main__":
     unittest.main()
