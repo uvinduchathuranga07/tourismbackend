@@ -9,6 +9,15 @@ def create_app() -> Flask:
 
     app = Flask(__name__)
 
+    # Allow the browser frontend (different origin/port) to call the API.
+    # Without these headers the browser's OPTIONS preflight succeeds but the POST is blocked.
+    @app.after_request
+    def add_cors_headers(response):
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        return response
+
     # Mount the three components under prefixes
     app.register_blueprint(assistance_bp, url_prefix="/assistance")
     app.register_blueprint(budget_planner_bp, url_prefix="/budget_planner")

@@ -1,5 +1,8 @@
 from flask import Flask, Blueprint, request, jsonify
 from pathlib import Path
+from difflib import get_close_matches
+import re
+import time
 import pandas as pd
 import joblib
 import requests
@@ -143,13 +146,39 @@ DESTINATION_ALIASES = {
     "kandy": "Kandy",
     "mirissa": "Mirissa",
     "bentota": "Bentota",
+    "benthota": "Bentota",
     "anuradhapura": "Anuradhapura",
+    "anuradapura": "Anuradhapura",
     "polonnaruwa": "Polonnaruwa",
+    "polonaruwa": "Polonnaruwa",
     "jaffna": "Jaffna",
     "yala": "Yala",
     "hikkaduwa": "Hikkaduwa",
-    "dambulla": "Dambulla"
+    "hikkadua": "Hikkaduwa",
+    "dambulla": "Dambulla",
+    "sigiriya rock": "Sigiriya",
+    "seegiriya": "Sigiriya",
+    "nuwara elia": "Nuwara Eliya",
+    "mirisa": "Mirissa"
 }
+
+
+def _fuzzy_match_locations(text):
+    """Fallback for misspelled place names (e.g. 'benthota', 'kandyy')."""
+    words = re.findall(r"[a-z]+", text)
+    # Single words plus adjacent pairs so two-word names like 'nuwara eliya' can match
+    tokens = words + [f"{a} {b}" for a, b in zip(words, words[1:])]
+    alias_keys = list(DESTINATION_ALIASES.keys())
+    found = []
+    for token in tokens:
+        if len(token) < 5:
+            continue
+        close = get_close_matches(token, alias_keys, n=1, cutoff=0.85)
+        if close:
+            name = DESTINATION_ALIASES[close[0]]
+            if name not in found:
+                found.append(name)
+    return found
 
 
 def parse_user_locations(text: str):
@@ -163,6 +192,8 @@ def parse_user_locations(text: str):
         if alias in t:
             if main_name not in extracted:
                 extracted.append(main_name)
+    if not extracted:
+        extracted = _fuzzy_match_locations(t)
     return extracted
 
 
@@ -194,15 +225,45 @@ def parse_user(text):
     }
 
 
-def get_live_weather_features(location):
-    coords = DESTINATION_COORDINATES.get(location)
-    if not coords:
+WEATHER_CACHE_TTL_SECONDS = 600
+WEATHER_FAILURE_RETRY_SECONDS = 60
+_weather_cache = {}
+
+
+def _weather_features_from_payload(payload):
+    current = payload.get("current", {})
+    daily = payload.get("daily", {})
+
+    time_value = current.get("time")
+    if time_value:
+        dt = pd.to_datetime(time_value)
+    else:
+        dt = pd.Timestamp.now()
+
+    uv_values = daily.get("uv_index_max", [6])
+    uv_index = float(uv_values[0]) if uv_values and uv_values[0] is not None else 6.0
+
+    return {
+        "month": int(dt.month),
+        "day_of_week": int(dt.dayofweek),
+        "is_weekend": int(dt.dayofweek >= 5),
+        "rainfall_mm": float(current.get("precipitation", 2.0)),
+        "temperature_c": float(current.get("temperature_2m", 28.5)),
+        "humidity": float(current.get("relative_humidity_2m", 75)),
+        "wind_speed": float(current.get("wind_speed_10m", 10)),
+        "uv_index": uv_index
+    }
+
+
+def _fetch_live_weather_batch(locations):
+    """Fetches weather for several locations in one Open-Meteo request (comma-separated coordinates)."""
+    located = [loc for loc in locations if loc in DESTINATION_COORDINATES]
+    if not located:
         return {}
 
-    lat, lon = coords
     params = {
-        "latitude": lat,
-        "longitude": lon,
+        "latitude": ",".join(str(DESTINATION_COORDINATES[loc][0]) for loc in located),
+        "longitude": ",".join(str(DESTINATION_COORDINATES[loc][1]) for loc in located),
         "current": "temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation",
         "daily": "uv_index_max",
         "timezone": "auto",
@@ -210,34 +271,44 @@ def get_live_weather_features(location):
     }
 
     try:
-        response = requests.get(OPEN_METEO_FORECAST_URL, params=params, timeout=8)
+        response = requests.get(OPEN_METEO_FORECAST_URL, params=params, timeout=6)
         response.raise_for_status()
-
         payload = response.json()
-        current = payload.get("current", {})
-        daily = payload.get("daily", {})
-
-        time_value = current.get("time")
-        if time_value:
-            dt = pd.to_datetime(time_value)
-        else:
-            dt = pd.Timestamp.now()
-
-        uv_values = daily.get("uv_index_max", [6])
-        uv_index = float(uv_values[0]) if uv_values else 6.0
-
-        return {
-            "month": int(dt.month),
-            "day_of_week": int(dt.dayofweek),
-            "is_weekend": int(dt.dayofweek >= 5),
-            "rainfall_mm": float(current.get("precipitation", 2.0)),
-            "temperature_c": float(current.get("temperature_2m", 28.5)),
-            "humidity": float(current.get("relative_humidity_2m", 75)),
-            "wind_speed": float(current.get("wind_speed_10m", 10)),
-            "uv_index": uv_index
-        }
+        # A single location returns an object, several return a list in request order
+        payloads = payload if isinstance(payload, list) else [payload]
+        return {loc: _weather_features_from_payload(p) for loc, p in zip(located, payloads)}
     except (requests.RequestException, ValueError, TypeError, IndexError):
         return {}
+
+
+def get_all_live_weather(locations):
+    """Returns live weather for all locations, reusing cached results and fetching the rest in one request."""
+    now = time.time()
+    results = {}
+    to_fetch = []
+    for loc in locations:
+        cached = _weather_cache.get(loc)
+        if cached:
+            fetched_at, features = cached
+            ttl = WEATHER_CACHE_TTL_SECONDS if features else WEATHER_FAILURE_RETRY_SECONDS
+            if now - fetched_at < ttl:
+                results[loc] = features
+                continue
+        to_fetch.append(loc)
+
+    if to_fetch:
+        fetched = _fetch_live_weather_batch(to_fetch)
+        for loc in to_fetch:
+            features = fetched.get(loc, {})
+            results[loc] = features
+            # Failed lookups are cached briefly so a slow API isn't retried on every request
+            _weather_cache[loc] = (now, features)
+
+    return results
+
+
+def get_live_weather_features(location):
+    return get_all_live_weather([location]).get(location, {})
 
 
 def predict_crowd(location, crowd_input):
@@ -448,8 +519,10 @@ def recommend():
 
     raw_results = []
 
+    live_weather_by_place = get_all_live_weather(DESTINATIONS)
+
     for place in DESTINATIONS:
-        live_weather = get_live_weather_features(place)
+        live_weather = live_weather_by_place.get(place, {})
         weather_input = {**live_weather, **weather_override}
 
         # Extract numeric weather parameters
