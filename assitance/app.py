@@ -669,7 +669,8 @@ def recommend():
         days=days_input,
         transport_mode=transport_mode_input,
         evaluated_items=final_results,
-        requested_destinations=requested_locations
+        requested_destinations=requested_locations,
+        user_text=user_text
     )
 
     return jsonify({

@@ -8,9 +8,11 @@ import math
 try:
     from .travel_transport_engine import calculate_distance, estimate_travel_time, DESTINATION_COORDINATES
     from .final_recommendation_engine import classify_decision_level
+    from .test_service import plan_routes
 except ImportError:
     from travel_transport_engine import calculate_distance, estimate_travel_time, DESTINATION_COORDINATES
     from final_recommendation_engine import classify_decision_level
+    from test_service import plan_routes
 
 
 def select_suitable_destinations(evaluated_items, top_n=6, requested_destinations=None):
@@ -373,15 +375,151 @@ def generate_route_explanations(route_nodes, overall_score, feasibility_info, ba
     return why, tradeoffs
 
 
-def build_route_recommendations(origin="Colombo", days=1, transport_mode="car", evaluated_items=None, requested_destinations=None):
+def build_places_to_visit(stops, evaluated_map):
+    """
+    Lists things to see at each given stop using Step 5 activity recommendations.
+    Used when test_service did not supply places for a stop.
+    """
+    places_to_visit = []
+    for node in stops:
+        acts = evaluated_map.get(node, {}).get("activity_recommendations", {}).get("activities", [])
+        places = [
+            {
+                "name": a.get("name", "Local Sightseeing"),
+                "category": (a.get("categories") or ["Other"])[0].title(),
+                "description": (a.get("reasons") or [""])[0],
+                "visit_duration": f"{a['duration_hours']}h" if a.get("duration_hours") else ""
+            }
+            for a in acts[:4]
+        ]
+        if places:
+            places_to_visit.append({"stop": node, "places": places})
+    return places_to_visit
+
+
+def _format_time(hours):
+    total_minutes = int(round(hours * 60))
+    h, m = divmod(total_minutes, 60)
+    if h > 0 and m > 0:
+        return f"{h}h {m}m"
+    return f"{h}h" if h > 0 else f"{m}m"
+
+
+def format_planned_routes(planned_routes, days, transport_mode, evaluated_map):
+    """
+    Converts route plans from test_service into the standard route recommendation schema.
+    Known city pairs use the curated distance table; other segments use the planner's road estimates.
+    """
+    route_results = []
+
+    for plan in planned_routes:
+        seq = plan["stops"]
+        segments = []
+        total_distance_km = 0
+        total_travel_time_hours = 0.0
+
+        for seg in plan["segments"]:
+            known_dist, is_estimated = calculate_distance(seg["from"], seg["to"])
+            if not is_estimated:
+                distance_km = known_dist
+            elif seg["distance_km"]:
+                distance_km = int(round(seg["distance_km"]))
+            else:
+                distance_km = known_dist
+
+            if seg["travel_time_hours"]:
+                hours_float = round(seg["travel_time_hours"], 2)
+                time_str = _format_time(hours_float)
+            else:
+                hours_float, time_str = estimate_travel_time(distance_km, transport_mode)
+
+            warnings = []
+            if hours_float >= 4.5:
+                warnings.append(f"Long travel segment between {seg['from']} and {seg['to']} ({time_str}).")
+            elif distance_km >= 200:
+                warnings.append(f"Significant distance ({distance_km} km) between {seg['from']} and {seg['to']}.")
+
+            segments.append({
+                "from": seg["from"],
+                "to": seg["to"],
+                "distance_km": distance_km,
+                "estimated_travel_time_hours": hours_float,
+                "estimated_travel_time": time_str,
+                "is_estimated_distance": is_estimated,
+                "warnings": warnings
+            })
+            total_distance_km += distance_km
+            total_travel_time_hours += hours_float
+
+        total_hours = round(total_travel_time_hours, 2)
+        # Count destinations only (the starting point is not a stop)
+        feasibility_info = evaluate_route_feasibility(days, total_hours, len(seq) - 1)
+
+        # Blend the planner's suitability score with Step 1-6 destination scores where available
+        dest_scores = [evaluated_map[node]["score"] for node in seq[1:] if node in evaluated_map and "score" in evaluated_map[node]]
+        overall_route_score = plan["score"]
+        if dest_scores:
+            overall_route_score = overall_route_score * 0.7 + (sum(dest_scores) / float(len(dest_scores))) * 0.3
+        if not feasibility_info["feasible"]:
+            overall_route_score -= 10
+        overall_route_score = int(round(min(100.0, max(0.0, overall_route_score))))
+
+        daily_plan = plan["daily_plan"] or generate_daily_route_plan(days, seq, segments, evaluated_map)
+
+        # Fill any stop the planner left without sights from Step 5 activity data
+        places_to_visit = list(plan["places_to_visit"])
+        covered_stops = {p["stop"].lower() for p in places_to_visit}
+        missing_stops = [node for node in seq[1:] if node.lower() not in covered_stops]
+        places_to_visit += build_places_to_visit(missing_stops, evaluated_map)
+        stop_order = {node.lower(): idx for idx, node in enumerate(seq)}
+        places_to_visit.sort(key=lambda p: stop_order.get(p["stop"].lower(), len(seq)))
+
+        tradeoffs = list(plan["tradeoffs"])
+        if not feasibility_info["feasible"] and feasibility_info["warning"] not in tradeoffs:
+            tradeoffs.append(feasibility_info["warning"])
+
+        route_results.append({
+            "route": seq,
+            "route_display": " → ".join(seq),
+            "overall_route_score": overall_route_score,
+            "decision": classify_decision_level(overall_route_score),
+            "total_distance_km": total_distance_km,
+            "total_travel_time_hours": total_hours,
+            "total_travel_time": _format_time(total_hours),
+            "days": days,
+            "feasible": feasibility_info["feasible"],
+            "segments": segments,
+            "daily_plan": daily_plan,
+            "places_to_visit": places_to_visit,
+            "why_recommended": plan["why_recommended"] or ["Route planned around your travel request"],
+            "tradeoffs": tradeoffs or ["Pace requires timely departures between consecutive destinations"]
+        })
+
+    # Sort by blended score (stable, so the planner's order breaks ties) and assign rank index
+    ranked_routes = sorted(route_results, key=lambda x: x["overall_route_score"], reverse=True)
+    for idx, r in enumerate(ranked_routes):
+        r["rank"] = idx + 1
+
+    return ranked_routes
+
+
+def build_route_recommendations(origin="Colombo", days=1, transport_mode="car", evaluated_items=None, requested_destinations=None, user_text=None):
     """
     Main Route Recommendation Engine pipeline.
-    Builds, optimizes, scores, and ranks candidate travel routes.
+    Uses test_service to plan routes around the user's request when available,
+    otherwise builds, optimizes, scores, and ranks candidate travel routes deterministically.
     """
     if not evaluated_items:
         return []
 
     evaluated_map = {item["place"]: item for item in evaluated_items}
+
+    planned_routes = plan_routes(
+        user_text, origin=origin, days=days, transport_mode=transport_mode, evaluated_items=evaluated_items
+    )
+    if planned_routes:
+        return format_planned_routes(planned_routes, days, transport_mode, evaluated_map)
+
     suitable_dests = select_suitable_destinations(evaluated_items, top_n=6, requested_destinations=requested_destinations)
 
     candidate_sequences = generate_candidate_sequences(origin, days, suitable_dests, requested_destinations=requested_destinations)
@@ -463,6 +601,7 @@ def build_route_recommendations(origin="Colombo", days=1, transport_mode="car", 
             "feasible": feasibility_info["feasible"],
             "segments": segments,
             "daily_plan": daily_plan,
+            "places_to_visit": build_places_to_visit(seq[1:], evaluated_map),
             "why_recommended": why_rec,
             "tradeoffs": tradeoffs
         })
