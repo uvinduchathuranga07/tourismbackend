@@ -15,6 +15,7 @@ try:
     from .event_timing_engine import build_event_timing_summary
     from .final_recommendation_engine import build_final_recommendation, calculate_overall_score
     from .route_recommendation_engine import build_route_recommendations
+    from .test_service import find_invalid_locations
 except ImportError:  # running as a script
     from weather_recommendation_engine import calculate_weather_suitability
     from travel_transport_engine import build_travel_transport_summary
@@ -23,6 +24,7 @@ except ImportError:  # running as a script
     from event_timing_engine import build_event_timing_summary
     from final_recommendation_engine import build_final_recommendation, calculate_overall_score
     from route_recommendation_engine import build_route_recommendations
+    from test_service import find_invalid_locations
 
 bp = Blueprint("assistance", __name__)
 
@@ -516,6 +518,21 @@ def recommend():
             if f"from {alias}" in t_lower:
                 origin_input = main_name
                 break
+
+    # Stop early if the traveller named a place that is not in Sri Lanka (or is badly misspelled)
+    check_text = user_text if origin_input == "Colombo" else f"{user_text} (starting from {origin_input})"
+    invalid_locations = find_invalid_locations(check_text)
+    if invalid_locations:
+        return jsonify({
+            "success": False,
+            "warning": (
+                f"You entered a city that is not in Sri Lanka ({', '.join(invalid_locations)}). "
+                "Please enter a Sri Lankan city or check that the spelling is correct."
+            ),
+            "invalid_locations": invalid_locations,
+            "route_recommendations": [],
+            "recommendations": []
+        })
 
     raw_results = []
 

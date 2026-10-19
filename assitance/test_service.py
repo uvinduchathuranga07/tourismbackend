@@ -67,6 +67,7 @@ Current conditions for popular destinations (higher score = better right now):
 
 Rules:
 - If the traveller names a destination (it may be misspelled, e.g. "mathra" = Matara), every route MUST reach it.
+- Every stop MUST be in Sri Lanka. If a named place is outside Sri Lanka, return {{"routes": []}}.
 - Destinations are NOT limited to the list above (Matara, Unawatuna, Tangalle, Weligama, Haputale, etc. are allowed).
 - Only add stops that lie on the way or are short, worthwhile detours. Never add places just because they score well.
 - Avoid backtracking and zig-zagging across the island. Keep total driving realistic (about 4-5 hours per day max).
@@ -135,9 +136,12 @@ def _clean_route(raw):
     for name, pair in (raw.get("coordinates") or {}).items():
         if isinstance(pair, (list, tuple)) and len(pair) == 2:
             lat, lng = _to_float(pair[0]), _to_float(pair[1])
-            # Keep only points inside Sri Lanka's bounding box
-            if lat is not None and lng is not None and 5.5 <= lat <= 10.0 and 79.4 <= lng <= 82.0:
-                coordinates[str(name).strip()] = (lat, lng)
+            if lat is None or lng is None:
+                continue
+            # Reject routes that reach a stop outside Sri Lanka's bounding box
+            if not (5.5 <= lat <= 10.0 and 79.4 <= lng <= 82.0):
+                return None
+            coordinates[str(name).strip()] = (lat, lng)
 
     raw_segments = raw.get("segments") or []
     segments = []
@@ -216,7 +220,64 @@ def _clean_route(raw):
     }
 
 
-def plan_routes(user_text, origin="Colombo", days=1, transport_mode="car", evaluated_items=None, route_count=3):
+LOCATION_CHECK_PROMPT = """A traveller wrote this request for a Sri Lanka trip planner:
+"{user_text}"
+
+List every place the traveller names as a start point or destination.
+For each one decide whether it is a real place in Sri Lanka. Treat clear misspellings
+of Sri Lankan places as valid (e.g. "katharagama" = Kataragama, "mathra" = Matara).
+Places outside Sri Lanka (e.g. Paris, Chennai, Maldives) or words that are not
+recognisable place names are NOT valid. Ignore generic words like "beach" or "mountains".
+
+Reply with JSON only:
+{{"places": [{{"name": "<as written>", "in_sri_lanka": <true|false>}}]}}"""
+
+_location_cache = {}
+
+
+def find_invalid_locations(user_text):
+    """
+    Returns the place names in the request that are not in Sri Lanka (or not recognisable).
+    Returns an empty list when nothing is wrong or the check is unavailable.
+    """
+    if not user_text or not isinstance(user_text, str) or not user_text.strip():
+        return []
+
+    cache_key = user_text.strip().lower()
+    cached = _location_cache.get(cache_key)
+    if cached and time.time() - cached[0] < PLAN_CACHE_TTL_SECONDS:
+        return cached[1]
+
+    try:
+        client = _get_client()
+        model = os.environ.get("OPENAI_ROUTE_MODEL") or os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+        completion = client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a Sri Lanka geography expert. You always reply with strict JSON only.",
+                },
+                {"role": "user", "content": LOCATION_CHECK_PROMPT.format(user_text=user_text)},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0,
+        )
+        payload = json.loads(completion.choices[0].message.content)
+    except Exception as exc:
+        print(f"[test_service] Location check unavailable: {exc}")
+        return []
+
+    invalid = [
+        str(p.get("name")).strip()
+        for p in payload.get("places") or []
+        if isinstance(p, dict) and str(p.get("name", "")).strip() and p.get("in_sri_lanka") is False
+    ]
+    _location_cache[cache_key] = (time.time(), invalid)
+    return invalid
+
+
+def plan_routes(user_text,origin="Colombo", days=1, transport_mode="car", evaluated_items=None, route_count=3):
     """
     Plans candidate routes for the user's request.
     Returns a list of cleaned route plans, or None if planning is unavailable or fails
