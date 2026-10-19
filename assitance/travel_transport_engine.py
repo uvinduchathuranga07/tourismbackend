@@ -44,7 +44,13 @@ ROUTE_DISTANCE_KM = {
     ("Ella", "Yala"): 95,
     ("Ella", "Arugam Bay"): 135,
     ("Yala", "Arugam Bay"): 160,
-    ("Trincomalee", "Jaffna"): 235
+    ("Trincomalee", "Jaffna"): 235,
+    ("Galle", "Matara"): 45,
+    ("Galle", "Kataragama"): 170,
+    ("Matara", "Kataragama"): 125,
+    ("Colombo", "Kataragama"): 260,
+    ("Ella", "Kataragama"): 85,
+    ("Kataragama", "Yala"): 25
 }
 
 TRANSPORT_CONFIG = {
@@ -87,14 +93,53 @@ DESTINATION_COORDINATES = {
     "Trincomalee": (8.5874, 81.2152),
     "Yala": (6.3725, 81.5185),
     "Hikkaduwa": (6.1407, 80.1010),
-    "Dambulla": (7.8742, 80.6511)
+    "Dambulla": (7.8742, 80.6511),
+    "Kataragama": (6.4134, 81.3346),
+    "Matara": (5.9549, 80.5550),
+    "Weligama": (5.9750, 80.4297),
+    "Unawatuna": (6.0098, 80.2499),
+    "Tangalle": (6.0243, 80.7941),
+    "Hambantota": (6.1241, 81.1185),
+    "Tissamaharama": (6.2783, 81.2873),
+    "Haputale": (6.7656, 80.9510),
+    "Badulla": (6.9934, 81.0550),
+    "Negombo": (7.2083, 79.8358),
+    "Batticaloa": (7.7310, 81.6747)
 }
+
+# Common alternative spellings mapped to the canonical names used above
+PLACE_ALIASES = {
+    "Katharagama": "Kataragama",
+    "Kathragama": "Kataragama",
+    "Katargama": "Kataragama",
+    "Kathirkamam": "Kataragama",
+    "Mathara": "Matara",
+    "Mathra": "Matara",
+    "Tissa": "Tissamaharama",
+    "Tissamaharamaya": "Tissamaharama",
+    "Yala National Park": "Yala",
+    "Nuwaraeliya": "Nuwara Eliya",
+    "Trinco": "Trincomalee",
+    "Hambanthota": "Hambantota",
+    "Thangalle": "Tangalle",
+}
+
+
+def normalize_place(name):
+    """Returns the canonical place name, resolving common misspellings."""
+    clean = " ".join(str(name).split()).title() if name else ""
+    return PLACE_ALIASES.get(clean, clean)
+
+
+def get_coordinates(name):
+    """Returns trusted (lat, lng) for a place, or None if unknown."""
+    return DESTINATION_COORDINATES.get(normalize_place(name))
 
 
 def calculate_distance(origin, destination):
     """Calculates route distance in kilometers from origin to destination."""
-    orig = origin.strip().title() if origin else "Colombo"
-    dest = destination.strip().title() if destination else "Kandy"
+    orig = normalize_place(origin) if origin else "Colombo"
+    dest = normalize_place(destination) if destination else "Kandy"
 
     if orig == dest:
         return 0, False

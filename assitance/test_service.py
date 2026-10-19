@@ -14,11 +14,17 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 
+try:
+    from .travel_transport_engine import get_coordinates
+except ImportError:
+    from travel_transport_engine import get_coordinates
+
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR.parent / ".env")
 
 PLAN_CACHE_TTL_SECONDS = 900
 REQUEST_TIMEOUT_SECONDS = 30
+MAX_ROAD_DISTANCE_KM = 550
 
 _client = None
 _plan_cache = {}
@@ -140,13 +146,23 @@ def _clean_route(raw):
         distance_km = _to_float(seg.get("distance_km"))
         travel_time_hours = _to_float(seg.get("travel_time_hours"))
 
-        # Sanity-check the stated road distance against the stops' coordinates
-        c1, c2 = coordinates.get(stops[i]), coordinates.get(stops[i + 1])
+        # Sanity-check the stated road distance against the stops' coordinates,
+        # preferring our trusted coordinates over the planner's own
+        c1 = get_coordinates(stops[i]) or coordinates.get(stops[i])
+        c2 = get_coordinates(stops[i + 1]) or coordinates.get(stops[i + 1])
         if c1 and c2:
             straight_km = _haversine_km(c1, c2)
             if distance_km is None or distance_km < straight_km or distance_km > straight_km * 2.5:
                 distance_km = round(straight_km * 1.35)
                 travel_time_hours = None
+        elif distance_km is not None and distance_km > MAX_ROAD_DISTANCE_KM:
+            # No way to verify, but no road trip within Sri Lanka is this long
+            distance_km = None
+            travel_time_hours = None
+
+        # Drop travel times that imply an unrealistic average speed
+        if distance_km and travel_time_hours and not (15 <= distance_km / travel_time_hours <= 90):
+            travel_time_hours = None
 
         segments.append({
             "from": stops[i],
